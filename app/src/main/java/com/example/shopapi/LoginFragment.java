@@ -38,6 +38,7 @@ public class LoginFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding=FragmentLoginBinding.inflate(inflater,container,false);
         View root=binding.getRoot();
+        navController = Navigation.findNavController(requireActivity(), R.id.nav_host);
         return root;
     }
 
@@ -63,30 +64,42 @@ public class LoginFragment extends Fragment {
             response.enqueue(new Callback<LoginResponse>() {
                 @Override
                 public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                    if(response.isSuccessful() && response.body() !=null){
-                        String token_n=response.body().getAccess_token();
 
-                        emailUserIdentify=binding.email.getText().toString();
-                        Bundle bundle=new Bundle();
-                        bundle.putString("identify",emailUserIdentify);
+                    if (response.isSuccessful() && response.body() != null) {
+                        String token = response.body().getAccess_token();
 
-                        Bundle bundle_token=new Bundle();
-                        bundle_token.putString("key_token",token_n);
+                        saveUserCredentials(token, binding.email.getText().toString());
 
-                        try {
-                            SharedPreferences preferences=getActivity().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
-                            SharedPreferences.Editor prefLoginEdit=preferences.edit();
-                            prefLoginEdit.putBoolean("loggedin",true);
-                            prefLoginEdit.putString("token",token_n);
-                            prefLoginEdit.commit();
-                            navController=Navigation.findNavController(requireActivity(),R.id.nav_host);
-                            navController.navigate(R.id.action_login_to_navigation_home);
-
-                        } catch (Exception e) {
-                            Log.e("API","token error:" +e.getLocalizedMessage());
-                        }
+                        Bundle bundle_token = new Bundle();
+                        bundle_token.putString("identify", binding.email.getText().toString());
+                        navController.navigate(R.id.action_login_to_navigation_home, bundle_token);
                     }
                 }
+
+//                    if(response.isSuccessful() && response.body() !=null){
+//                        String token_n=response.body().getAccess_token();
+//
+//                        emailUserIdentify=binding.email.getText().toString();
+//                        Bundle bundle=new Bundle();
+//                        bundle.putString("identify",emailUserIdentify);
+//
+//                        Bundle bundle_token=new Bundle();
+//                        bundle_token.putString("key_token",token_n);
+//
+//                        try {
+//                            SharedPreferences preferences=getActivity().getSharedPreferences("myPrefs", Context.MODE_PRIVATE);
+//                            SharedPreferences.Editor prefLoginEdit=preferences.edit();
+//                            prefLoginEdit.putBoolean("loggedin",true);
+//                            prefLoginEdit.putString("token",token_n);
+//                            prefLoginEdit.commit();
+//                            navController=Navigation.findNavController(requireActivity(),R.id.nav_host);
+//                            navController.navigate(R.id.action_login_to_navigation_home);
+//
+//                        } catch (Exception e) {
+//                            Log.e("API","token error:" +e.getLocalizedMessage());
+//                        }
+//                    }
+//                }
 
                 @Override
                 public void onFailure(Call<LoginResponse> call, Throwable throwable) {
@@ -98,6 +111,21 @@ public class LoginFragment extends Fragment {
             Toast.makeText(requireActivity(),e.toString(),Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void saveUserCredentials(String token, String email) {
+        try {
+            SharedPreferences preferences = getActivity()
+                    .getSharedPreferences("prefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor prefLoginEdit = preferences.edit();
+            prefLoginEdit.putBoolean("loggedin", true);
+            prefLoginEdit.putString("token", token);
+            prefLoginEdit.putString("email", email);
+            prefLoginEdit.apply();
+        } catch (Exception e) {
+            Log.d("API", String.format("Token  error: %s", e.toString()));
+        }
+    }
+
 
     private boolean IsEmptyEditTextLogin(){
         if(binding.email.getText().toString().isEmpty() ||
